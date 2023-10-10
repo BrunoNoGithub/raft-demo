@@ -13,14 +13,14 @@ import (
 
 // Server stores the state between every client
 type Server struct {
-	clients  []*Session
-	joins    chan net.Conn
-	incoming chan *Request
+	clients  []*Session // # List of Session(s), per client
+	joins    chan net.Conn // # Channel for new connections
+	incoming chan *Request // # Channel
 
 	t          *time.Timer
-	req        uint64
+	req        uint64 // #Number of requests?
 	throughput *os.File
-	kvstore    *Store
+	kvstore    *Store // # KVS for server, each server contains a single KVS
 }
 
 // NewServer constructs and starts a new Server
@@ -35,6 +35,7 @@ func NewServer(ctx context.Context, s *Store) *Server {
 	}
 	svr.throughput = createFile(svrID + "-throughput.out")
 
+	// # Two concurrent go func for listening and monitoring, using the passed ctx context
 	go svr.Listen(ctx)
 	go svr.monitor(ctx)
 	return svr
@@ -47,6 +48,7 @@ func (svr *Server) Exit() {
 	if svr.kvstore.Logging {
 		svr.kvstore.LogFile.Close()
 	}
+	// #Disconnect from every client
 	for _, v := range svr.clients {
 		v.Disconnect()
 	}
@@ -59,7 +61,7 @@ func (svr *Server) Broadcast(data string) {
 	}
 }
 
-// SendUDP sends a UDP repply to a client listening on 'addr'
+// SendUDP sends a UDP reply to a client listening on 'addr'
 func (svr *Server) SendUDP(addr string, message string) {
 	conn, _ := net.Dial("udp", addr)
 	defer conn.Close()
@@ -68,6 +70,7 @@ func (svr *Server) SendUDP(addr string, message string) {
 
 // HandleRequest handles the client requistion, checking if it matches the right syntax
 // before proposing it to the FSM
+// # Where is the FSM called?
 func (svr *Server) HandleRequest(cmd *Request) {
 
 	data := bytes.TrimSuffix(cmd.Command, []byte("\n"))
@@ -79,16 +82,16 @@ func (svr *Server) HandleRequest(cmd *Request) {
 
 // Join threats a join requisition from clients to the Server state
 func (svr *Server) Join(ctx context.Context, connection net.Conn) {
-	client := NewSession(connection)
-	svr.clients = append(svr.clients, client)
+	client := NewSession(connection) // # Get client(session) from connection channel
+	svr.clients = append(svr.clients, client) // # Put client in server client list
 
-	go func() {
+	go func() { // # Concurrently look for data from client
 		for {
 			select {
 			case <-ctx.Done():
 				return
 
-			case data := <-client.incoming:
+			case data := <-client.incoming: // # Get incoming request from client incoming chan
 				svr.incoming <- data
 			}
 		}
@@ -127,6 +130,7 @@ func (svr *Server) monitor(ctx context.Context) {
 }
 
 // Legacy code, used only on ad-hoc message formats.
+// # No longer used, seemingly
 func validateReq(requisition string) bool {
 
 	requisition = strings.ToLower(requisition)

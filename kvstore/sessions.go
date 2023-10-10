@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"strings"
@@ -17,9 +18,9 @@ type Request struct {
 // Session struct which represents each active client session connected
 // on the cluster
 type Session struct {
-	incoming chan *Request
-	outgoing chan string
-	reader   *bufio.Reader
+	incoming chan *Request // # Channel of Request Struct (Cmd+Ip)
+	outgoing chan string // # Output string channel
+	reader   *bufio.Reader // # Read and write buffers (based on connection)
 	writer   *bufio.Writer
 	conn     net.Conn
 	cancel   context.CancelFunc
@@ -41,7 +42,7 @@ func NewSession(connection net.Conn) *Session {
 		cancel:   c,
 	}
 
-	client.Listen(ctx)
+	client.Listen(ctx) // #Starts concurrent read and write during execution
 	return client
 }
 
@@ -51,27 +52,34 @@ func (client *Session) Read(ctx context.Context) {
 		case <-ctx.Done():
 			return
 
-		default:
-			line, err := client.reader.ReadBytes('\n')
+		default: // # Potential source of current error
+			// # Performs char by char read (?) (line is a byte array)
+			line, err := client.reader.ReadBytes('!')
+			line = line[:len(line)-1] 
+			fmt.Println(line)
+			// # If read has valid context, request is passed to incoming channel
+			// # Note, server reads client incoming channel concurrently, adding requests to its own chan
 			if err == nil && len(line) > 1 {
 				ip := client.conn.RemoteAddr().String()
 				ipContent := strings.Split(ip, ":")
 				newRequest := &Request{line, ipContent[0]}
 				client.incoming <- newRequest
-
+				fmt.Println("r1")
 			} else if err == io.EOF {
+				fmt.Println("EOF")
 				return
 			}
+			fmt.Println("r2")
+			
 		}
 	}
 }
-
 func (client *Session) Write(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
-
+		// # server adds to client.outgoing directly, through broadcasts only
 		case data := <-client.outgoing:
 			client.writer.WriteString(data)
 		}

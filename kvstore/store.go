@@ -42,10 +42,10 @@ var (
 // Custom configuration over default for testing
 func configRaft() *raft.Config {
 
-	config := raft.DefaultConfig()
-	config.SnapshotInterval = 24 * time.Hour
-	config.SnapshotThreshold = 2 << 62
-	config.LogLevel = logLevel
+	config := raft.DefaultConfig() // # Use default settings except for below:
+	config.SnapshotInterval = 24 * time.Hour // # average Snapshot every day instead of every 2min
+	config.SnapshotThreshold = 2 << 62 
+	config.LogLevel = logLevel // # Determined INFO above
 	return config
 }
 
@@ -81,7 +81,8 @@ func New(ctx context.Context, inmem bool) *Store {
 			Output: os.Stderr,
 		}),
 	}
-
+	// # vars from main.go
+	// # if blank,this is a replica
 	if joinHandlerAddr != "" {
 		go s.ListenRaftJoins(ctx, joinHandlerAddr)
 	}
@@ -91,7 +92,9 @@ func New(ctx context.Context, inmem bool) *Store {
 	}
 
 	if *logfolder != "" {
+		fmt.Printf("Generating logfile")
 		s.Logging = true
+		// # svrID declared in main.go
 		logFileName := *logfolder + "log-file-" + svrID + ".txt"
 		s.LogFile = createFile(logFileName)
 	}
@@ -109,7 +112,7 @@ func New(ctx context.Context, inmem bool) *Store {
 		}
 		initValue = s.gzipBuffer.Bytes()
 	}
-
+	// # if true, will fill [numInitKeys] of store's mappings on startup
 	if preInitialize {
 		for i := 0; i < numInitKeys; i++ {
 			s.m[strconv.Itoa(i)] = initValue
@@ -119,26 +122,30 @@ func New(ctx context.Context, inmem bool) *Store {
 }
 
 // Propose invokes Raft.Apply to propose a new command following protocol's atomic broadcast
-// to the application's FSM. Sends an "OK" repply to inform commitment. This procedure applies
+// to the application's FSM. Sends an "OK" reply to inform commitment. This procedure applies
 // "Get" requisitions to prevent inconsistent reads (that do not follow total ordering). etcd's
 // issue #741 gives a good explanation about this problem.
 func (s *Store) Propose(msg []byte, svr *Server, clientIP string) error {
 
+	// # Only the leader may make proposals
 	if s.raft.State() != raft.Leader {
 		return nil
 	}
 
+	// # Apply command to raft consensus
 	f := s.raft.Apply(msg, raftTimeout)
 	err := f.Error()
 	if err != nil {
 		return err
 	}
 
+	// # Not sure why the type would ever not be a string
 	switch f.Response().(type) {
 	case string:
 		response := strings.Split(f.Response().(string), "-")
 		udpAddr := strings.Join([]string{clientIP, ":", response[0]}, "")
 		clientRepply := strings.Join([]string{"OK: ", response[1], "\n"}, "")
+		// # Order server to send UDP reply to client
 		svr.SendUDP(udpAddr, clientRepply)
 		break
 
@@ -150,6 +157,7 @@ func (s *Store) Propose(msg []byte, svr *Server, clientIP string) error {
 
 // testGet returns the value for the given key, just using in unit tests since it results
 // in an inconsistence read operation, not following total ordering.
+// # Currently used for store_test only
 func (s *Store) testGet(key string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -159,7 +167,11 @@ func (s *Store) testGet(key string) string {
 // StartRaft opens the store. If enableSingle is set, and there are no existing peers,
 // then this node becomes the first node, and therefore leader, of the cluster.
 // localID should be the server identifier for this node.
+// # Called by main.go, with localID= main's svrID
+// # enableSingle true for the replica nodes
 func (s *Store) StartRaft(enableSingle bool, localID string, localRaftAddr string) error {
+
+	// # Build parameters to initiate raft node
 
 	// Setup Raft configuration.
 	config := configRaft()
@@ -208,6 +220,7 @@ func (s *Store) StartRaft(enableSingle bool, localID string, localRaftAddr strin
 }
 
 // JoinRaft joins a raft node, identified by nodeID and located at addr
+// # Called at ListenRaftJoins, which is seemingly only run on leader
 func (s *Store) JoinRaft(nodeID, addr string, voter bool) error {
 
 	s.logger.Debug(fmt.Sprintf("received join request for remote node %s at %s", nodeID, addr))
@@ -236,7 +249,7 @@ func (s *Store) JoinRaft(nodeID, addr string, voter bool) error {
 			}
 		}
 	}
-
+	// # Simple check to see if it's added to voting or non-voting raft nodes
 	if voter {
 		f := s.raft.AddVoter(raft.ServerID(nodeID), raft.ServerAddress(addr), 0, 0)
 		if f.Error() != nil {
@@ -256,6 +269,7 @@ func (s *Store) JoinRaft(nodeID, addr string, voter bool) error {
 // ListenRaftJoins receives incoming join requests to the raft cluster. Its initialized
 // when "-hjoin" flag is specified, and it can be set only in the first node in case you
 // have a static/imutable cluster architecture
+// # Run on leader to listen for new joins to this consesus
 func (s *Store) ListenRaftJoins(ctx context.Context, addr string) {
 
 	listener, err := net.Listen("tcp", addr)
@@ -273,7 +287,7 @@ func (s *Store) ListenRaftJoins(ctx context.Context, addr string) {
 			if err != nil {
 				log.Fatalf("accept failed: %s", err.Error())
 			}
-
+			// # Essentially gets request from connection
 			request, _ := bufio.NewReader(conn).ReadString('\n')
 
 			data := strings.Split(request, "-")

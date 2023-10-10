@@ -24,7 +24,7 @@ const (
 	// Defines wheter the application should interpret IPs provided on
 	// cmdli args or use its current env POD_IP and ask the other to
 	// Kubernetes sdk
-	staticIPs = false
+	staticIPs = true
 )
 
 var (
@@ -81,6 +81,7 @@ func init() {
 
 func main() {
 
+	//#Identify
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
@@ -93,46 +94,54 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
+	//#Shared context between Server and KVS
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// Initialize the Key-value store
+	// Initialize the Key-value store, #passing context
+	// #Store.New(a,b)
 	kvs := New(ctx, true)
 	listener, err := net.Listen("tcp", svrPort)
 	if err != nil {
 		log.Fatalf("failed to start connection: %s", err.Error())
 	}
 
-	// Start the Raft cluster
+	// Start the Raft cluster #(uses Hashicorp Raft)
 	if err := kvs.StartRaft(joinAddr == "", svrID, raftAddr); err != nil {
 		log.Fatalf("failed to start raft cluster: %s", err.Error())
 	}
 
-	// Initialize the server
+	// Initialize the server, #passing generated context and KVS
 	server := NewServer(ctx, kvs)
 
 	// Send a join request, if any
+	// #TODO: understand meaning of joinAddr
 	if joinAddr != "" {
 		if err = sendJoinRequest(); err != nil {
 			log.Fatalf("failed to send join request to node at %s: %s", joinAddr, err.Error())
 		}
 	}
 
+	// #Think of go func as a concurrent Thread, for now
+	// # Listener Thread
 	go func() {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
 				log.Fatalf("accept failed: %s", err.Error())
 			}
-
+			// # (Successfull?) Connections sent to server
 			server.joins <- conn
 			server.kvstore.logger.Info("New client connected!")
 		}
 	}()
-
+	
+	// # Essentially create a channel to listen for closure signal eg:Ctrl+C
 	terminate := make(chan os.Signal, 1)
 	signal.Notify(terminate, os.Interrupt)
+	// # wait to receive from terminate
 	<-terminate
 
+	// # TODO: Check what this does
 	if *memprofile != "" {
 		f, err := os.Create(*memprofile)
 		if err != nil {
@@ -144,7 +153,6 @@ func main() {
 			log.Fatal("could not write memory profile: ", err)
 		}
 	}
-
 	cancel()
 	server.Exit()
 }
