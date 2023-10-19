@@ -98,7 +98,7 @@ func (client *Info) Disconnect() {
 	}
 }
 
-// StartUDP initializes UDP listener, used to receive servers repplies
+// StartUDP initializes UDP listener, used to receive servers replies
 func (client *Info) StartUDP() error {
 
 	addr := net.UDPAddr{
@@ -229,6 +229,7 @@ func main() {
 	for {
 
 		text, err := reader.ReadString('\n')
+		fmt.Println((text))
 		if err != nil {
 			log.Printf("input reader failed: %s", err.Error())
 			continue

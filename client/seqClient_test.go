@@ -192,7 +192,7 @@ func TestNumMessagesKvstore(b *testing.T) {
 		v.Shutdown()
 	}
 }
-
+// Time/Latency Test
 func TestClientTimeKvstore(b *testing.T) {
 
 	b.Parallel()
@@ -213,7 +213,6 @@ func TestClientTimeKvstore(b *testing.T) {
 	default:
 		log.Fatalf("Must specify a valid option in '-data' argument ('0' = 128B, '1' = 1KB, '2' = 4KB) Passed: %d, %T", dataChoice, dataChoice)
 	}
-
 	configBarrier := new(sync.WaitGroup)
 	configBarrier.Add(Cfg.numClients)
 

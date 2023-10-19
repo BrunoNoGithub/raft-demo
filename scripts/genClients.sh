@@ -1,6 +1,6 @@
 #!/bin/bash
 
-goSource=.
+goSource=/home/bruno/Documents/LAPESD/raft-demo/client
 
 if [[ $# -ne 6 ]] && [[ $# -ne 7 ]]
 then
@@ -15,12 +15,12 @@ if [ $1 -eq "0" ]; then
 	if [[ $# -eq 6 ]]; then
 		go test $goSource -run TestNumMessagesKvstore -v -count 1 -clients=${2} -req=${3} -key=${4} -data=${5} -log=${6}
 	else
-		go test $goSource -run TestNumMessagesKvstore -v -count 1 -clients=${2} -req=${3} -key=${4} -data=${5} -log=${6} -config=${7}  
+		go test $goSource -run TestNumMessagesKvstore -v -count 1 -clients=${2} -req=${3} -key=${4} -data=${5} -log=${6} -config=${7}
 	fi
 
 elif [ $1 -eq "1" ]; then
 
-	if [[ $# -eq 6 ]]; then	
+	if [[ $# -eq 6 ]]; then
 		go test $goSource -run TestClientTimeKvstore -v -count 1 -clients=${2} -time=${3} -key=${4} -data=${5} -log=${6}
 	else
 		go test $goSource -run TestClientTimeKvstore -v -count 1 -clients=${2} -time=${3} -key=${4} -data=${5} -log=${6} -config=${7}
