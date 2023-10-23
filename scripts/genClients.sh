@@ -1,7 +1,7 @@
 #!/bin/bash
 
 goSource=/home/bruno/Documents/LAPESD/raft-demo/client
-
+#will depend on wether run.sh was called with 2 or 3 parameters
 if [[ $# -ne 6 ]] && [[ $# -ne 7 ]]
 then
 	echo "usage with 6 args: $0 'mode(0: numMessages; 1: execTime)' 'numberClients' '(reqForeachClient||execTime)' 'diffHashKeys' 'dataChoice(0: 128B, 1: 1KB, 2: 4KB)' 'logLatency(0: false; 1: true)'"; echo ""
@@ -10,6 +10,8 @@ then
 fi
 
 go clean -testcache
+#test choice hardcoded to 1 in run.sh
+#echo $1,$2,$3,$4,$5,$6;
 if [ $1 -eq "0" ]; then
 
 	if [[ $# -eq 6 ]]; then

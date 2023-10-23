@@ -9,10 +9,10 @@ local=.
 
 #clientsFolders=(1 4 7 10 13 16 19)
 
-#app=kvstore
+# for kvstore
 #numClients=(1 4 7 10 13 16 19)
 
-app=diskstorage
+# for diskstore
 numClients=(1 7 13 19 25 31 37)
 
 #numClients=(1 12 23 34 45 56)
@@ -22,6 +22,12 @@ numClients=(1 7 13 19 25 31 37)
 dataSizeOptions=(1) #0: 128B, 1: 1KB, 2: 4KB
 execTime=60 #seconds
 numDiffHash=1000000
+
+#Cmd line parameters:
+# 1 - experimentFolderName
+# 2 - Set to 1 to logLatency (same folder as where file is run, so Client)
+# 3- configFilename
+
 #Checks if number of arguments is not 2 or 3 ($# is number of arguments passed, and -ne is not equal)
 if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]
 then
@@ -31,7 +37,6 @@ then
 fi
 
 echo "started...."
-
 for j in ${dataSizeOptions[*]}
 do
 	#for i in ${numClients[*]}
@@ -43,6 +48,9 @@ do
             # used to distribute client load generation on diff nodes
             sleep ${execTime}
 
+        # runs local script
+        # previously assigned numclients, execTime and number of hashes, as well as dataSizeOption
+        # loglatency(true/false) and configFilename passed as parameters
         else
             if [[ $# -eq 2 ]]; then
             	$local/genClients.sh 1 ${numClients[i]} ${execTime} ${numDiffHash} ${j} ${2}

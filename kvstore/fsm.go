@@ -43,11 +43,14 @@ func (f *fsm) Apply(l *raft.Log) interface{} {
 
 	switch command.Op {
 	case pb.Command_SET:
+		fmt.Println("Set cmd")
 		return strings.Join([]string{command.Ip, f.applySet(command.Key, command.Value)}, "-")
 	case pb.Command_GET:
+		fmt.Println("Get cmd")
 		return strings.Join([]string{command.Ip, f.applyGet(command.Key)}, "-")
-	// case pb.Command_DELETE:
-	// 	return strings.Join([]string{command.Ip, f.applyDelete(command.Key)}, "-")
+	case pb.Command_DELETE:
+		fmt.Println("Del cmd")
+		return strings.Join([]string{command.Ip, f.applyDelete(command.Key)}, "-")
 	default:
 		panic(fmt.Sprintf("unrecognized command op: %v", command))
 	}
@@ -99,10 +102,10 @@ func (f *fsm) applySet(key, value string) string {
 	return ""
 }
 
-// func (f *fsm) applyDelete(key string) string {
-// 	delete(f.m, key)
-// 	return ""
-// }
+func (f *fsm) applyDelete(key string) string {
+	delete(f.m, key)
+	return ""
+}
 
 // NOTE: pre-initalization of gzipReader on fsm store is not viable option, because necessary
 // Close() calls from write method will imediately dealloc the f.Reader attribute. This closure

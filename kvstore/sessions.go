@@ -55,8 +55,8 @@ func (client *Session) Read(ctx context.Context) {
 		default: // # Potential source of current error
 			// # Performs char by char read (?) (line is a byte array)
 			line, err := client.reader.ReadBytes('\n')
-			//line = line[:len(line)-1] 
-			fmt.Println(line)
+			//line = line[:len(line)-1]
+			//fmt.Println(line)
 			// # If read has valid context, request is passed to incoming channel
 			// # Note, server reads client incoming channel concurrently, adding requests to its own chan
 			if err == nil && len(line) > 1 {
@@ -64,13 +64,11 @@ func (client *Session) Read(ctx context.Context) {
 				ipContent := strings.Split(ip, ":")
 				newRequest := &Request{line, ipContent[0]}
 				client.incoming <- newRequest
-				fmt.Println("r1")
 			} else if err == io.EOF {
 				fmt.Println("EOF")
 				return
 			}
-			fmt.Println("r2")
-			
+
 		}
 	}
 }

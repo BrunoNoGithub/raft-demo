@@ -16,6 +16,7 @@ import (
 	"github.com/Lz-Gustavo/journey/pb"
 )
 
+// - Defines possible strings, which are just a series of N symbols @
 var (
 	dataChoice int
 	oneTweet   = strings.Repeat("@", 128)  // dataChoice == 0
@@ -43,12 +44,11 @@ type config struct {
 }
 
 var Cfg *config
-
 func init() {
 	Cfg = new(config)
 	flag.IntVar(&Cfg.numClients, "clients", 0, "Set the number of clients")
 	flag.IntVar(&Cfg.numMessages, "req", 0, "Set the number of sent requisitions by each client")
-	flag.IntVar(&Cfg.numKey, "key", 0, "Set the number of differente keys for hash set")
+	flag.IntVar(&Cfg.numKey, "key", 0, "Set the number of different keys for hash set")
 	flag.Int64Var(&Cfg.execTime, "time", 0, "Set the execution time of the experiment")
 	flag.BoolVar(&Cfg.mustLog, "log", true, "Set if this client execution will generate latency logs (0: false; 1: true)")
 	flag.IntVar(&dataChoice, "data", -1, "Choose the size of the stored value in the KV storage ('0' = 128B, '1' = 1KB, '2' = 4KB)")
@@ -129,7 +129,7 @@ func TestNumMessagesKvstore(b *testing.T) {
 
 			for k := 0; k < Cfg.numMessages; k++ {
 
-				op = rand.Intn(2)
+				op = rand.Intn(3)
 				if chosenClient && Cfg.mustLog {
 					coinThroughtput = rand.Intn(measureChance)
 					if coinThroughtput == 0 {
@@ -155,11 +155,11 @@ func TestNumMessagesKvstore(b *testing.T) {
 					}
 					break
 
-					// case 2:
-					// 	msg = &pb.Command{
-					// 		Op:  pb.Command_DELETE,
-					// 		Key: strconv.Itoa(rand.Intn(Cfg.numKey)),
-					// 	}
+					case 2:
+						msg = &pb.Command{
+							Op:  pb.Command_DELETE,
+							Key: strconv.Itoa(rand.Intn(Cfg.numKey)),
+						}
 				}
 				err := clients[j].BroadcastProtobuf(msg, strconv.Itoa(clients[j].Udpport))
 				if err != nil {
@@ -213,12 +213,13 @@ func TestClientTimeKvstore(b *testing.T) {
 	default:
 		log.Fatalf("Must specify a valid option in '-data' argument ('0' = 128B, '1' = 1KB, '2' = 4KB) Passed: %d, %T", dataChoice, dataChoice)
 	}
+	// Setup new sync groups
 	configBarrier := new(sync.WaitGroup)
 	configBarrier.Add(Cfg.numClients)
 
 	finishedBarrier := new(sync.WaitGroup)
 	finishedBarrier.Add(Cfg.numClients)
-
+	// Open the logfile (not the decoupled logging node)
 	var logger *log.Logger
 	if Cfg.mustLog {
 		outFile, err := os.OpenFile(strconv.Itoa(Cfg.numClients)+"c-latency.out", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -228,7 +229,7 @@ func TestClientTimeKvstore(b *testing.T) {
 		defer outFile.Close()
 		logger = log.New(outFile, "", 0)
 	}
-
+	// Generate clients array, signals channel adn request structure
 	clients := make([]*Info, Cfg.numClients, Cfg.numClients)
 	signal := make(chan bool)
 	requests := make(chan *pb.Command, Cfg.numMessages)
@@ -350,8 +351,9 @@ func generateProtobufRequests(reqs chan<- *pb.Command, signal <-chan bool, numKe
 
 	for {
 		var msg *pb.Command
-		op := rand.Intn(2)
-
+		// Note, originally set to 2, and most reference to deleted were commented
+		op := rand.Intn(3)
+		//Randomly alternates between sets and gets
 		switch op {
 		case 0:
 			msg = &pb.Command{
@@ -365,16 +367,18 @@ func generateProtobufRequests(reqs chan<- *pb.Command, signal <-chan bool, numKe
 				Op:  pb.Command_GET,
 				Key: strconv.Itoa(rand.Intn(numKey)),
 			}
-			// case 2:
-			// 	msg = &pb.Command{
-			// 		Op:  pb.Command_DELETE,
-			// 		Key: strconv.Itoa(rand.Intn(numKey)),
-			// 	}
+			case 2:
+				msg = &pb.Command{
+					Op:  pb.Command_DELETE,
+					Key: strconv.Itoa(rand.Intn(numKey)),
+				}
 		}
-
+		//interesting switch-case...
 		select {
+		//while the signal is not closed, puts messages into req channel
 		case reqs <- msg:
 			// ...
+		//signal received from killWorkers after it times out
 		case <-signal:
 			close(reqs)
 			return

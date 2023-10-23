@@ -74,7 +74,7 @@ func (svr *Server) SendUDP(addr string, message string) {
 func (svr *Server) HandleRequest(cmd *Request) {
 
 	data := bytes.TrimSuffix(cmd.Command, []byte("\n"))
-	fmt.Println("data: ",data)
+	fmt.Println("SERVER.GO:request received")
 	if err := svr.kvstore.Propose(data, svr, cmd.Ip); err != nil {
 		svr.kvstore.logger.Error(fmt.Sprintf("Failed to propose message: %q, error: %s\n", data, err.Error()))
 	}
