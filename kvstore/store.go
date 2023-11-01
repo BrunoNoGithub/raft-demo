@@ -25,7 +25,7 @@ const (
 	logLevel            = "INFO"
 	compressValues      = false
 
-	preInitialize = true
+	preInitialize = false
 	numInitKeys   = 1000000
 	initValueSize = 1024
 
@@ -44,7 +44,7 @@ func configRaft() *raft.Config {
 
 	config := raft.DefaultConfig() // # Use default settings except for below:
 	config.SnapshotInterval = 24 * time.Hour // # average Snapshot every day instead of every 2min
-	config.SnapshotThreshold = 2 << 62 
+	config.SnapshotThreshold = 2 << 62
 	config.LogLevel = logLevel // # Determined INFO above
 	return config
 }

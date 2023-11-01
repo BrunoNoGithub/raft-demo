@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#path should be handled in a better way...
 goSource=/home/bruno/Documents/LAPESD/raft-demo/client
 #will depend on wether run.sh was called with 2 or 3 parameters
 if [[ $# -ne 6 ]] && [[ $# -ne 7 ]]
@@ -26,5 +26,6 @@ elif [ $1 -eq "1" ]; then
 		go test $goSource -run TestClientTimeKvstore -v -count 1 -clients=${2} -time=${3} -key=${4} -data=${5} -log=${6}
 	else
 		go test $goSource -run TestClientTimeKvstore -v -count 1 -clients=${2} -time=${3} -key=${4} -data=${5} -log=${6} -config=${7}
+		#0/1- number of clients active/lifetime of client//number of unique keys/dataSize (0 to 2)/Logging bool(mustlog)
 	fi
 fi

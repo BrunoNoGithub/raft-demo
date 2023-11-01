@@ -20,7 +20,9 @@ type fsm Store
 // Apply applies a Raft log entry to the key-value store.
 func (f *fsm) Apply(l *raft.Log) interface{} {
 
+	// - Makes a Command structure
 	command := &pb.Command{}
+	// - Pressumably reads from the log and puts the command into the "command" struct
 	err := proto.Unmarshal(l.Data, command)
 	if err != nil {
 		return err

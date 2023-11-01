@@ -85,12 +85,14 @@ func init() {
 }
 
 func main() {
-
+	fmt.Println("Start of main")
 	loggerInstances := make([]*Logger, numApps)
+	fmt.Println("End of make logger instances")
 	for i := 0; i < numApps; i++ {
 		go func(j int) {
-
+			fmt.Println("Start of Make new logger")
 			loggerInstances[j] = NewLogger(logIDs[j])
+			fmt.Println("end of make new logger")
 			if err := loggerInstances[j].StartRaft(logIDs[j], raftAddrs[j]); err != nil {
 				log.Fatalf("failed to start raft cluster: %s", err.Error())
 			}
@@ -99,7 +101,7 @@ func main() {
 			}
 		}(i)
 	}
-
+	fmt.Println("end of for")
 	terminate := make(chan os.Signal, 1)
 	signal.Notify(terminate, os.Interrupt)
 	<-terminate

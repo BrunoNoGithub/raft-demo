@@ -52,6 +52,7 @@ func init() {
 
 		loadEnvVariables()
 		svrID = "node" + strings.Split(envPodIP, ".")[3]
+		// svrPort and raftAddr hardcoded?
 		svrPort = ":11000"
 		raftAddr = envPodIP + ":12000"
 
@@ -134,7 +135,7 @@ func main() {
 			server.kvstore.logger.Info("New client connected!")
 		}
 	}()
-	
+
 	// # Essentially create a channel to listen for closure signal eg:Ctrl+C
 	terminate := make(chan os.Signal, 1)
 	signal.Notify(terminate, os.Interrupt)
