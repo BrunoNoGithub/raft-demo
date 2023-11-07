@@ -24,14 +24,14 @@ const (
 	catastrophicFaults = false
 
 	// Each second writes current throughput to stdout.
-	monitoringThroughtput = true
+	monitoringThroughtput = false
 )
 
 // Custom configuration over default for testing
 func configRaft() *raft.Config {
 
 	config := raft.DefaultConfig()
-	config.SnapshotInterval = 30 * time.Second
+	config.SnapshotInterval = 10 * time.Second
 	config.SnapshotThreshold = 2 << 62
 	config.LogLevel = "WARN"
 	return config
@@ -52,7 +52,7 @@ type Logger struct {
 
 // NewLogger constructs a new Logger struct and its dependencies
 func NewLogger(id string) *Logger {
-	fmt.Sprintf("STarting a logger\n",)
+	fmt.Print("STarting a logger\n",)
 	ctx, c := context.WithCancel(context.Background())
 	l := &Logger{
 		log:    log.New(os.Stderr, "[logger] ", log.LstdFlags),

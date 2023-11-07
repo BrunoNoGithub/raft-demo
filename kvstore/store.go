@@ -22,7 +22,7 @@ import (
 const (
 	retainSnapshotCount = 2
 	raftTimeout         = 10 * time.Second
-	logLevel            = "INFO"
+	logLevel            = "ALL"
 	compressValues      = false
 
 	preInitialize = false
@@ -43,7 +43,7 @@ var (
 func configRaft() *raft.Config {
 
 	config := raft.DefaultConfig() // # Use default settings except for below:
-	config.SnapshotInterval = 24 * time.Hour // # average Snapshot every day instead of every 2min
+	config.SnapshotInterval = 2 * time.Second // # average Snapshot every day instead of every 2min
 	config.SnapshotThreshold = 2 << 62
 	config.LogLevel = logLevel // # Determined INFO above
 	return config
@@ -71,6 +71,7 @@ type Store struct {
 // New returns a new Store.
 func New(ctx context.Context, inmem bool) *Store {
 
+
 	s := &Store{
 		m:        make(map[string][]byte),
 		inmem:    inmem,
@@ -81,6 +82,24 @@ func New(ctx context.Context, inmem bool) *Store {
 			Output: os.Stderr,
 		}),
 	}
+
+	// logfile,err:=os.Create("raft.log")
+	// if err !=nil{
+	// 	log.Fatalf("Couldn't create log. Error %v\n",err)
+	// }
+	// s := &Store{
+	// 	m:        make(map[string][]byte),
+	// 	inmem:    inmem,
+	// 	compress: compressValues,
+	// 	logger: hclog.New(&hclog.LoggerOptions{
+	// 		Name:   "store",
+	// 		Level:  hclog.LevelFromString(logLevel),
+	// 		Output: logfile,
+	// 		JSONFormat: true,
+	// 	}),
+	// }
+
+
 	// # vars from main.go
 	// # if blank,this is a replica
 	if joinHandlerAddr != "" {
@@ -92,11 +111,14 @@ func New(ctx context.Context, inmem bool) *Store {
 	}
 
 	if *logfolder != "" {
-		fmt.Printf("Generating logfile")
+		fmt.Printf("Generating logfile\n")
 		s.Logging = true
 		// # svrID declared in main.go
 		logFileName := *logfolder + "log-file-" + svrID + ".txt"
 		s.LogFile = createFile(logFileName)
+		fmt.Printf("Logfile: %s \n",s.LogFile.Name())
+	} else {
+		fmt.Printf("logfolder parameter unused, won't generate logfile\n")
 	}
 
 	if compressValues {
@@ -176,6 +198,7 @@ func (s *Store) StartRaft(enableSingle bool, localID string, localRaftAddr strin
 	// Setup Raft configuration.
 	config := configRaft()
 	config.LocalID = raft.ServerID(localID)
+
 
 	// Setup Raft communication.
 	addr, err := net.ResolveTCPAddr("tcp", localRaftAddr)
@@ -428,10 +451,14 @@ func createFile(filename string) *os.File {
 	}
 
 	var fd *os.File
+	var err error
 	if _, exists := os.Stat(filename); exists == nil {
 		fd, _ = os.OpenFile(filename, flags, 0644)
 	} else if os.IsNotExist(exists) {
-		fd, _ = os.OpenFile(filename, os.O_CREATE|flags, 0644)
+		fd, err = os.OpenFile(filename, os.O_CREATE|flags, 0644)
+		if err!=nil{
+			log.Fatalln("Couldn't create file. Error:",err.Error())
+		}
 	} else {
 		log.Fatalln("Could not create file", filename, ":", exists.Error())
 		return nil

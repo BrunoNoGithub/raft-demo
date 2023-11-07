@@ -29,6 +29,7 @@ func (s *fsm) Apply(l *raft.Log) interface{} {
 	command.Id = l.Index
 	serializedCmd, _ := proto.Marshal(command)
 	binary.Write(s.LogFile, binary.BigEndian, int32(len(serializedCmd)))
+	//panic(fmt.Sprintf("WROTE: %s", f.LogFile.Name()))
 	_, err = s.LogFile.Write(serializedCmd)
 
 	if monitoringThroughtput {
