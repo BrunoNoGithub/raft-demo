@@ -24,7 +24,7 @@ const (
 	catastrophicFaults = false
 
 	// Each second writes current throughput to stdout.
-	monitoringThroughtput = false
+	monitoringThroughtput = true
 )
 
 // Custom configuration over default for testing
@@ -52,7 +52,7 @@ type Logger struct {
 
 // NewLogger constructs a new Logger struct and its dependencies
 func NewLogger(id string) *Logger {
-	fmt.Print("STarting a logger\n",)
+	fmt.Print("Starting a logger\n",)
 	ctx, c := context.WithCancel(context.Background())
 	l := &Logger{
 		log:    log.New(os.Stderr, "[logger] ", log.LstdFlags),
