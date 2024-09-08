@@ -1,6 +1,6 @@
 #!/bin/bash
 #path should be handled in a better way...
-goSource=/home/bruno/Documentos/raft-demo/client
+goSource=/home/bruno/Documents/raft-demo/client
 #will depend on wether run.sh was called with 2 or 3 parameters
 if [[ $# -ne 6 ]] && [[ $# -ne 7 ]]
 then

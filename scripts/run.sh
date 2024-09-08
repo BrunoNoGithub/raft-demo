@@ -4,7 +4,7 @@
 
 # Possibly find a way to autoamtically detect path
 # Same may go for genClients.sh
-path=/home/bruno/Documents/LAPESD/raft-demo/
+path=/home/bruno/Documents/raft-demo/
 local=.
 
 #clientsFolders=(1 4 7 10 13 16 19)
@@ -13,7 +13,7 @@ local=.
 #numClients=(1 4 7 10 13 16 19)
 
 # for diskstore
-numClients=(1) # 7 13 19 25 31 37)
+numClients=(1 7 13 19 25 31 37)
 
 #numClients=(1 12 23 34 45 56)
 #numClients=(1 6 11 16 21 26 31)
