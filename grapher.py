@@ -4,7 +4,8 @@ import numpy as np
 import statistics
 import os
 import re
-os.chdir("/home/bruno/Documents/LAPESD/raft-demo/client")
+#os.chdir("/home/bruno/Documents/LAPESD/raft-demo/client")
+os.chdir("/app/raft-demo/client")
 print(os.getcwd())
 dir_files=(os.listdir())
 pattern=r"\d{1}c-latency.out"

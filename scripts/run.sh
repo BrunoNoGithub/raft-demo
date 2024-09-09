@@ -4,7 +4,8 @@
 
 # Possibly find a way to autoamtically detect path
 # Same may go for genClients.sh
-path=/home/bruno/Documents/raft-demo/
+#path=/home/bruno/Documents/raft-demo/
+path=/app/raft-demo/kvstore
 local=.
 
 #clientsFolders=(1 4 7 10 13 16 19)
